@@ -1,0 +1,460 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Sheep Rentals Infrastructure - DynamoDB, S3, Cognito"
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+    Description: Environment name
+
+  ProjectName:
+    Type: String
+    Default: sheep-rentals
+    Description: Project name for resource naming
+
+Resources:
+  # DynamoDB Tables
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${ProjectName}-users-${Environment}"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: EmailIndex
+          KeySchema:
+            - AttributeName: email
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+          AttributeDefinitions:
+            - AttributeName: email
+              AttributeType: S
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+
+  PropertiesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${ProjectName}-properties-${Environment}"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: landlordId
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: LandlordIdIndex
+          KeySchema:
+            - AttributeName: landlordId
+              KeyType: HASH
+            - AttributeName: id
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: StatusIndex
+          KeySchema:
+            - AttributeName: status
+              KeyType: HASH
+            - AttributeName: id
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+
+  ApplicationsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${ProjectName}-applications-${Environment}"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: propertyId
+          AttributeType: S
+        - AttributeName: renterId
+          AttributeType: S
+        - AttributeName: landlordId
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: PropertyIdIndex
+          KeySchema:
+            - AttributeName: propertyId
+              KeyType: HASH
+            - AttributeName: id
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: RenterIdIndex
+          KeySchema:
+            - AttributeName: renterId
+              KeyType: HASH
+            - AttributeName: id
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: LandlordIdIndex
+          KeySchema:
+            - AttributeName: landlordId
+              KeyType: HASH
+            - AttributeName: id
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: StatusIndex
+          KeySchema:
+            - AttributeName: status
+              KeyType: HASH
+            - AttributeName: id
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+
+  PaymentsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${ProjectName}-payments-${Environment}"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: rentalAgreementId
+          AttributeType: S
+        - AttributeName: renterId
+          AttributeType: S
+        - AttributeName: landlordId
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+        - AttributeName: dueDate
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: RentalAgreementIdIndex
+          KeySchema:
+            - AttributeName: rentalAgreementId
+              KeyType: HASH
+            - AttributeName: id
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: RenterIdIndex
+          KeySchema:
+            - AttributeName: renterId
+              KeyType: HASH
+            - AttributeName: id
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: LandlordIdIndex
+          KeySchema:
+            - AttributeName: landlordId
+              KeyType: HASH
+            - AttributeName: id
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: StatusDueDateIndex
+          KeySchema:
+            - AttributeName: status
+              KeyType: HASH
+            - AttributeName: dueDate
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+
+  RentalAgreementsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${ProjectName}-rental-agreements-${Environment}"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: propertyId
+          AttributeType: S
+        - AttributeName: renterId
+          AttributeType: S
+        - AttributeName: landlordId
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: PropertyIdIndex
+          KeySchema:
+            - AttributeName: propertyId
+              KeyType: HASH
+            - AttributeName: id
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: RenterIdIndex
+          KeySchema:
+            - AttributeName: renterId
+              KeyType: HASH
+            - AttributeName: id
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: LandlordIdIndex
+          KeySchema:
+            - AttributeName: landlordId
+              KeyType: HASH
+            - AttributeName: id
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: StatusIndex
+          KeySchema:
+            - AttributeName: status
+              KeyType: HASH
+            - AttributeName: id
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+
+  # S3 Bucket for Images
+  ImagesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${ProjectName}-images-${Environment}"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ["*"]
+            AllowedMethods: [GET, PUT, POST, DELETE, HEAD]
+            AllowedOrigins: ["*"]
+            MaxAge: 3000
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteIncompleteMultipartUploads
+            Status: Enabled
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 7
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+
+  ImagesBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ImagesBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: PublicReadGetObject
+            Effect: Allow
+            Principal: "*"
+            Action: "s3:GetObject"
+            Resource: !Sub "${ImagesBucket}/*"
+
+  # Cognito User Pool
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub "${ProjectName}-user-pool-${Environment}"
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: false
+      AutoVerifiedAttributes:
+        - email
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Mutable: true
+          Required: true
+        - Name: given_name
+          AttributeDataType: String
+          Mutable: true
+          Required: true
+        - Name: family_name
+          AttributeDataType: String
+          Mutable: true
+          Required: true
+        - Name: custom:userType
+          AttributeDataType: String
+          Mutable: true
+          Required: true
+        - Name: phone_number
+          AttributeDataType: String
+          Mutable: true
+          Required: false
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: true
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+      EmailConfiguration:
+        EmailSendingAccount: COGNITO_DEFAULT
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref UserPool
+      ClientName: !Sub "${ProjectName}-client-${Environment}"
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_SRP_AUTH
+      PreventUserExistenceErrors: true
+
+  # IAM Role for Lambda (if needed)
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ProjectName}-lambda-role-${Environment}"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: DynamoDBAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource:
+                  - !GetAtt UsersTable.Arn
+                  - !Sub "${UsersTable.Arn}/index/*"
+                  - !GetAtt PropertiesTable.Arn
+                  - !Sub "${PropertiesTable.Arn}/index/*"
+                  - !GetAtt ApplicationsTable.Arn
+                  - !Sub "${ApplicationsTable.Arn}/index/*"
+                  - !GetAtt PaymentsTable.Arn
+                  - !Sub "${PaymentsTable.Arn}/index/*"
+                  - !GetAtt RentalAgreementsTable.Arn
+                  - !Sub "${RentalAgreementsTable.Arn}/index/*"
+        - PolicyName: S3Access
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:PutObjectAcl
+                Resource: !Sub "${ImagesBucket}/*"
+
+Outputs:
+  UsersTableName:
+    Description: Name of the Users DynamoDB table
+    Value: !Ref UsersTable
+    Export:
+      Name: !Sub "${ProjectName}-users-table-${Environment}"
+
+  PropertiesTableName:
+    Description: Name of the Properties DynamoDB table
+    Value: !Ref PropertiesTable
+    Export:
+      Name: !Sub "${ProjectName}-properties-table-${Environment}"
+
+  ApplicationsTableName:
+    Description: Name of the Applications DynamoDB table
+    Value: !Ref ApplicationsTable
+    Export:
+      Name: !Sub "${ProjectName}-applications-table-${Environment}"
+
+  PaymentsTableName:
+    Description: Name of the Payments DynamoDB table
+    Value: !Ref PaymentsTable
+    Export:
+      Name: !Sub "${ProjectName}-payments-table-${Environment}"
+
+  RentalAgreementsTableName:
+    Description: Name of the Rental Agreements DynamoDB table
+    Value: !Ref RentalAgreementsTable
+    Export:
+      Name: !Sub "${ProjectName}-rental-agreements-table-${Environment}"
+
+  ImagesBucketName:
+    Description: Name of the S3 bucket for images
+    Value: !Ref ImagesBucket
+    Export:
+      Name: !Sub "${ProjectName}-images-bucket-${Environment}"
+
+  UserPoolId:
+    Description: ID of the Cognito User Pool
+    Value: !Ref UserPool
+    Export:
+      Name: !Sub "${ProjectName}-user-pool-id-${Environment}"
+
+  UserPoolClientId:
+    Description: ID of the Cognito User Pool Client
+    Value: !Ref UserPoolClient
+    Export:
+      Name: !Sub "${ProjectName}-user-pool-client-id-${Environment}"
+
+  LambdaExecutionRoleArn:
+    Description: ARN of the Lambda execution role
+    Value: !GetAtt LambdaExecutionRole.Arn
+    Export:
+      Name: !Sub "${ProjectName}-lambda-role-arn-${Environment}"
